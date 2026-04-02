@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanças 1408 | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { background: radial-gradient(circle at top right, #1e1b4b, #0b0f1a); color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .card-glass { background: rgba(22, 29, 47, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.4s ease; }
+        .card-glass:hover { transform: translateY(-5px); border-color: rgba(59, 130, 246, 0.5); }
+        .input-dark { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; color: white; }
+        .input-dark:focus { border-color: #3b82f6; outline: none; }
+        .card-negative { border-color: rgba(239, 68, 68, 0.5) !important; background: rgba(69, 10, 10, 0.4) !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="login-screen" class="max-w-md mx-auto mt-24 card-glass p-10 rounded-3xl shadow-2xl animate__animated animate__fadeInDown">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-extrabold text-blue-500 tracking-tighter">FINANÇAS 1408</h2>
+            <p class="text-[9px] text-slate-500 uppercase tracking-[0.3em]">Gestão Inteligente Compartilhada</p>
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="user" placeholder="Usuário" class="w-full p-4 rounded-xl input-dark text-center font-semibold text-sm">
+            <input type="password" id="pass" placeholder="Senha" class="w-full p-4 rounded-xl input-dark text-center font-semibold">
+            <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-xl font-black transition-all">ENTRAR NO SISTEMA</button>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden max-w-6xl mx-auto animate__animated animate__fadeIn">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div>
+                <h1 class="text-2xl font-black text-white uppercase tracking-tighter">Finanças 1408</h1>
+                <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Controle de Recebimentos e Despesas</p>
+            </div>
+
+            <div class="flex gap-4 items-center">
+                <div class="text-right hidden md:block">
+                    <p id="welcome-msg" class="text-xs font-bold text-white uppercase"></p>
+                    <p class="text-[9px] text-slate-500" id="current-date"></p>
+                </div>
+                <button onclick="showAdmin()" class="p-2 hover:bg-slate-800 rounded-full transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </button>
+                <button onclick="location.reload()" class="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-xs font-black">SAIR</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="card-glass p-6 rounded-3xl border-l-4 border-emerald-500 cursor-pointer" onclick="filterBy('Entrada')">
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-2">Recebimentos</p>
+                <h3 class="text-2xl font-black text-emerald-400" id="kpi-entradas">R$ 0,00</h3>
+            </div>
+            <div class="card-glass p-6 rounded-3xl border-l-4 border-red-600 cursor-pointer" onclick="filterBy('Saída')">
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-2">Pago (Saídas)</p>
+                <h3 class="text-2xl font-black text-red-600" id="kpi-saidas">R$ 0,00</h3>
+            </div>
+            <div class="card-glass p-6 rounded-3xl border-l-4 border-blue-500">
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-2">Saldo Real Provisório</p>
+                <h3 class="text-2xl font-black text-blue-400" id="kpi-saldo">R$ 0,00</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div id="card-sobra-container" class="card-glass p-8 rounded-3xl relative overflow-hidden">
+                <p class="text-blue-400 text-[10px] font-black uppercase mb-3 tracking-widest text-center">Limite de Gasto Diário (Sobra)</p>
+                <h3 class="text-5xl font-black text-white text-center tracking-tighter" id="media-disponivel">R$ 0,00</h3>
+                <p class="text-slate-500 text-[10px] mt-4 text-center italic" id="info-calculo"></p>
+            </div>
+            <div class="card-glass p-8 rounded-3xl flex flex-col justify-center items-center">
+                <p class="text-slate-500 text-[10px] font-black uppercase mb-2 tracking-widest">Custo Médio de Despesas</p>
+                <h3 class="text-4xl font-black text-slate-300" id="custo-medio">R$ 0,00</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
+            <div class="card-glass p-8 rounded-[2rem] h-fit">
+                <h4 class="font-black mb-6 text-xs text-blue-500 uppercase">Novo Lançamento</h4>
+                <div class="space-y-4">
+                    <input type="text" id="desc" placeholder="Descrição" class="w-full p-4 rounded-2xl input-dark">
+                    <input type="number" id="valor" placeholder="Valor R$" class="w-full p-4 rounded-2xl input-dark">
+                    <input type="date" id="data-venc" class="w-full p-4 rounded-2xl input-dark">
+                    <select id="tipo" class="w-full p-4 rounded-2xl input-dark">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Despesa">Despesa (A Pagar)</option>
+                        <option value="Saída">Saída (Pago)</option>
+                    </select>
+                    <button onclick="addEntry()" class="w-full bg-blue-600 hover:bg-blue-500 p-5 rounded-2xl font-black text-xs uppercase">Salvar Lançamento</button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 card-glass rounded-[2rem] overflow-hidden">
+                <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                    <h4 class="font-black text-xs uppercase tracking-widest text-slate-400" id="list-title">Histórico Geral</h4>
+                    <button onclick="renderUI()" class="text-[9px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full font-bold">VER TUDO</button>
+                </div>
+                <div id="list-container" class="max-h-[500px] overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-screen" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-50">
+        <div class="max-w-xl w-full card-glass p-8 rounded-3xl animate__animated animate__zoomIn">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black text-blue-400 uppercase italic">Auditoria de Acesso</h2>
+                <button onclick="hideAdmin()" class="text-slate-500 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="logs-list" class="space-y-3 max-h-[400px] overflow-y-auto font-mono text-[10px]"></div>
+        </div>
+    </div>
+
+    <script>
+        const DB_KEY = 'fin1408_final_stable';
+        let db = JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        let logs = JSON.parse(localStorage.getItem('fin1408_logs')) || [];
+        const users = { "Fabiano": "10101010", "Daniela": "10101010" };
+
+        function handleLogin() {
+            const u = document.getElementById('user').value.trim();
+            const p = document.getElementById('pass').value.trim();
+            if(users[u] && users[u] === p) {
+                logs.push({ user: u, stamp: new Date().toLocaleString('pt-BR') });
+                localStorage.setItem('fin1408_logs', JSON.stringify(logs));
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('welcome-msg').innerText = `Gestor: ${u}`;
+                document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday: 'long', day: 'numeric', month: 'long'});
+                renderUI();
+            } else { alert("Acesso Negado."); }
+        }
+
+        function addEntry() {
+            const desc = document.getElementById('desc').value;
+            const valor = parseFloat(document.getElementById('valor').value);
+            const tipo = document.getElementById('tipo').value;
+            const dataVenc = document.getElementById('data-venc').value || new Date().toISOString().split('T')[0];
+            if(!desc || isNaN(valor)) return;
+            db.push({ id: Date.now(), desc, valor, tipo, dataVenc, dataPagamento: null });
+            save();
+            document.getElementById('desc').value = ''; document.getElementById('valor').value = '';
+        }
+
+        function markAsPaid(id) {
+            const idx = db.findIndex(e => e.id === id);
+            if(idx !== -1) {
+                db[idx].tipo = 'Saída';
+                db[idx].dataPagamento = new Date().toLocaleString('pt-BR');
+                save();
+            }
+        }
+
+        function deleteEntry(id) { db = db.filter(e => e.id !== id); save(); }
+        function save() { localStorage.setItem(DB_KEY, JSON.stringify(db)); renderUI(); }
+        function filterBy(t) { renderUI(t); }
+
+        function renderUI(filterType = null) {
+            const list = document.getElementById('list-container');
+            list.innerHTML = '';
+            
+            const ent = db.filter(e => e.tipo === 'Entrada').reduce((acc, e) => acc + e.valor, 0);
+            const sai = db.filter(e => e.tipo === 'Saída').reduce((acc, e) => acc + e.valor, 0);
+            const des = db.filter(e => e.tipo === 'Despesa').reduce((acc, e) => acc + e.valor, 0);
+            
+            document.getElementById('kpi-entradas').innerText = format(ent);
+            document.getElementById('kpi-saidas').innerText = format(sai);
+            document.getElementById('kpi-saldo').innerText = format(ent - sai - des);
+
+            // CUSTO MÉDIO (Apenas Despesas e Saídas)
+            const totalGastos = db.filter(e => e.tipo !== 'Entrada');
+            const cMedio = totalGastos.length > 0 ? (totalGastos.reduce((acc, e) => acc + e.valor, 0) / totalGastos.length) : 0;
+            document.getElementById('custo-medio').innerText = format(cMedio);
+
+            // LIMITE DIÁRIO (SOBRA)
+            const hoje = new Date();
+            const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+            const diasRestantes = (ultimoDia - hoje.getDate()) + 1;
+            const sobraTotal = ent - des - sai;
+            const sobraDiaria = sobraTotal / diasRestantes;
+            
+            document.getElementById('media-disponivel').innerText = format(sobraDiaria);
+            document.getElementById('info-calculo').innerText = `${format(sobraTotal)} livre para os próximos ${diasRestantes} dias do mês.`;
+            document.getElementById('card-sobra-container').className = sobraTotal < 0 ? 'card-glass p-8 rounded-3xl card-negative' : 'card-glass p-8 rounded-3xl';
+
+            let filtered = filterType ? db.filter(e => e.tipo === filterType) : db;
+            document.getElementById('list-title').innerText = filterType ? `Filtrando: ${filterType}` : "Histórico Geral";
+
+            filtered.sort((a,b) => b.id - a.id).forEach(e => {
+                const div = document.createElement('div');
+                div.className = "p-5 border-b border-white/5 flex justify-between items-center hover:bg-white/5 transition";
+                const btn = e.tipo === 'Despesa' ? `<button onclick="markAsPaid(${e.id})" class="mr-3 bg-blue-600 text-[8px] font-black px-2 py-1 rounded-md text-white uppercase">Pagar</button>` : '';
+                
+                div.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-1 h-8 ${e.tipo === 'Entrada' ? 'bg-emerald-500' : 'bg-red-500'} mr-4 rounded-full opacity-50"></div>
+                        <div>
+                            <p class="font-bold text-sm text-white">${e.desc} <span class="text-[8px] text-emerald-500 ml-2">${e.dataPagamento ? '✓ Pago' : ''}</span></p>
+                            <p class="text-[9px] text-slate-500 uppercase">${e.dataVenc.split('-').reverse().join('/')} • ${e.tipo}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        ${btn}
+                        <span class="font-black ${e.tipo === 'Entrada' ? 'text-emerald-400' : 'text-red-500'} mr-6 text-sm">${format(e.valor)}</span>
+                        <button onclick="deleteEntry(${e.id})" class="text-slate-600 hover:text-red-500">&times;</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function format(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function showAdmin() {
+            document.getElementById('logs-list').innerHTML = logs.reverse().map(l => `<div class="p-2 border-b border-white/5 text-blue-300">> [LOGIN] <span class="text-white">${l.user}</span> em ${l.stamp}</div>`).join('');
+            document.getElementById('admin-screen').classList.remove('hidden');
+        }
+        function hideAdmin() { document.getElementById('admin-screen').classList.add('hidden'); }
+    </script>
+</body>
+</html>
